@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+  
     populateSection('fruitsSection', items.fruits, 'kg');
     populateSection('vegetablesSection', items.vegetables, 'kg');
     populateSection('meatSeafoodSection', items.meatSeafood, 'kg');
@@ -94,7 +95,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         totalPriceElem.textContent = totalPrice.toFixed(2);
+
+        // Save order summary to localStorage
+        saveOrderSummary();
     }
+
+    function saveOrderSummary() {
+        const orderItems = [];
+        const rows = orderSummary.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const columns = row.querySelectorAll('td');
+            orderItems.push({
+                name: columns[0].innerText,
+                quantity: columns[1].innerText,
+                price: columns[2].innerText
+            });
+        });
+
+        localStorage.setItem('orderSummary', JSON.stringify(orderItems));
+        localStorage.setItem('totalPrice', totalPriceElem.textContent);
+    }
+
+    function loadOrderSummary() {
+        const savedOrderSummary = localStorage.getItem('orderSummary');
+        const savedTotalPrice = localStorage.getItem('totalPrice');
+
+        if (savedOrderSummary) {
+            const orderItems = JSON.parse(savedOrderSummary);
+            orderItems.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.price}</td>
+                `;
+                orderSummary.appendChild(row);
+            });
+            totalPriceElem.textContent = savedTotalPrice || '0.00';
+        }
+    }
+
+    // Load the order summary on page load
+    loadOrderSummary();
 
     document.getElementById('addToFavourites').addEventListener('click', function() {
         const favouriteOrder = [];
@@ -111,27 +154,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         localStorage.setItem('favouriteOrder', JSON.stringify(favouriteOrder));
-    
+
         // Show custom alert
         const alertDiv = document.getElementById('customAlert');
         const alertImage = document.getElementById('alertImage');
         const alertMessage = document.getElementById('alertMessage');
-    
+
         alertImage.src = 'logo.png'; // Set the path to your image
-        alertMessage.innerText = 'Thank you for your purchase! \n \n Your order has been successfully placed.\n \n  Have a wonderful day!' ;
-       
+        alertMessage.innerText = 'your items were added to favourites successfuly!';
 
         alertDiv.classList.remove('hidden');
         alertDiv.classList.add('show');
-    
+
         // Hide the alert after 3 seconds
         setTimeout(() => {
             alertDiv.classList.remove('show');
             alertDiv.classList.add('hidden');
         }, 3000);
     });
-    
-    
 
     document.getElementById('applyFavourites').addEventListener('click', function() {
         const favouriteOrder = JSON.parse(localStorage.getItem('favouriteOrder') || '[]');
@@ -166,10 +206,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         totalPriceElem.textContent = totalPrice.toFixed(2);
+
+        // Save the order summary after applying favourites
+        saveOrderSummary();
     });
 
     document.getElementById('buyNow').addEventListener('click', function() {
-        const orderSummary = [];
+        const orderSummaryData = [];
         const inputs = orderForm.querySelectorAll('input[type="number"]');
         let totalPrice = 0;
 
@@ -181,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const unit = input.getAttribute('data-unit');
                 const itemPrice = quantity * price;
                 totalPrice += itemPrice;
-                orderSummary.push({
+                orderSummaryData.push({
                     name: name,
                     price: price,
                     unit: unit,
@@ -191,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        localStorage.setItem('orderSummary', JSON.stringify(orderSummary));
+        localStorage.setItem('orderSummary', JSON.stringify(orderSummaryData));
         localStorage.setItem('totalPrice', totalPrice.toFixed(2));
         window.location.href = 'checkout.html';
     });
@@ -235,8 +278,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const totalPrice = parseFloat(totalPriceElem.textContent) + itemPrice;
                 totalPriceElem.textContent = totalPrice.toFixed(2);
+
+                // Save the updated order summary
+                saveOrderSummary();
             }
         }
-        
     });
 });
